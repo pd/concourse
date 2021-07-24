@@ -43,6 +43,7 @@ type ContainerdRuntime struct {
 	InitBin        string        `long:"init-bin"   description:"Path to an init executable. By default will search within the concourse/bin directory the concourse binary is in."`
 	CNIPluginsDir  string        `long:"cni-plugins-dir" description:"Path to CNI network plugins. By default will set to the concourse/bin directory the concourse binary is in."`
 	RequestTimeout time.Duration `long:"request-timeout" default:"5m" description:"How long to wait for requests to Containerd to complete. 0 means no timeout."`
+	HaltTimeout    time.Duration `long:"halt-timeout" default:"10s" description:"How long to wait for tasks to shutdown when builds are halted."`
 
 	Network struct {
 		ExternalIP flag.IP `long:"external-ip" description:"IP address to use to reach container's mapped ports. Autodetected if not specified."`

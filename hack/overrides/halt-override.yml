@@ -1,0 +1,8 @@
+# halt-timeout.yml - a docker-compose override that makes `worker`
+# extend the default container halt timeout value.
+version: '3'
+
+services:
+  worker:
+    environment:
+      CONCOURSE_CONTAINERD_HALT_TIMEOUT: "1m"

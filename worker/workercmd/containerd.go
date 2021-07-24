@@ -140,11 +140,14 @@ func (cmd *WorkerCommand) buildUpBackendOpts(logger lager.Logger, cniNetwork run
 		cmd.Containerd.InitBin = initBin
 	}
 
+	killer := runtime.NewKiller(runtime.WithGracePeriod(cmd.Containerd.HaltTimeout))
+
 	return []runtime.GardenBackendOpt{
 		runtime.WithNetwork(cniNetwork),
 		runtime.WithRequestTimeout(cmd.Containerd.RequestTimeout),
 		runtime.WithMaxContainers(cmd.Containerd.MaxContainers),
 		runtime.WithInitBinPath(cmd.Containerd.InitBin),
+		runtime.WithKiller(killer),
 	}, nil
 }
 

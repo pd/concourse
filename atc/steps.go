@@ -199,6 +199,7 @@ type StepVisitor interface {
 	VisitInParallel(*InParallelStep) error
 	VisitAcross(*AcrossStep) error
 	VisitTimeout(*TimeoutStep) error
+	VisitHaltTimeout(*HaltTimeoutStep) error
 	VisitRetry(*RetryStep) error
 	VisitOnSuccess(*OnSuccessStep) error
 	VisitOnFailure(*OnFailureStep) error
@@ -271,6 +272,10 @@ var StepPrecedence = []StepDetector{
 		New: func() StepConfig { return &TimeoutStep{} },
 	},
 	{
+		Key: "halt_timeout",
+		New: func() StepConfig { return &HaltTimeoutStep{} },
+	},
+	{
 		Key: "set_pipeline",
 		New: func() StepConfig { return &SetPipelineStep{} },
 	},
@@ -293,14 +298,15 @@ var StepPrecedence = []StepDetector{
 }
 
 type GetStep struct {
-	Name     string         `json:"get"`
-	Resource string         `json:"resource,omitempty"`
-	Version  *VersionConfig `json:"version,omitempty"`
-	Params   Params         `json:"params,omitempty"`
-	Passed   []string       `json:"passed,omitempty"`
-	Trigger  bool           `json:"trigger,omitempty"`
-	Tags     Tags           `json:"tags,omitempty"`
-	Timeout  string         `json:"timeout,omitempty"`
+	Name        string         `json:"get"`
+	Resource    string         `json:"resource,omitempty"`
+	Version     *VersionConfig `json:"version,omitempty"`
+	Params      Params         `json:"params,omitempty"`
+	Passed      []string       `json:"passed,omitempty"`
+	Trigger     bool           `json:"trigger,omitempty"`
+	Tags        Tags           `json:"tags,omitempty"`
+	Timeout     string         `json:"timeout,omitempty"`
+	HaltTimeout string         `json:"halt_timeout,omitempty"`
 }
 
 func (step *GetStep) ResourceName() string {
@@ -316,13 +322,14 @@ func (step *GetStep) Visit(v StepVisitor) error {
 }
 
 type PutStep struct {
-	Name      string        `json:"put"`
-	Resource  string        `json:"resource,omitempty"`
-	Params    Params        `json:"params,omitempty"`
-	Inputs    *InputsConfig `json:"inputs,omitempty"`
-	Tags      Tags          `json:"tags,omitempty"`
-	GetParams Params        `json:"get_params,omitempty"`
-	Timeout   string        `json:"timeout,omitempty"`
+	Name        string        `json:"put"`
+	Resource    string        `json:"resource,omitempty"`
+	Params      Params        `json:"params,omitempty"`
+	Inputs      *InputsConfig `json:"inputs,omitempty"`
+	Tags        Tags          `json:"tags,omitempty"`
+	GetParams   Params        `json:"get_params,omitempty"`
+	Timeout     string        `json:"timeout,omitempty"`
+	HaltTimeout string        `json:"halt_timeout,omitempty"`
 }
 
 func (step *PutStep) ResourceName() string {
@@ -350,6 +357,7 @@ type TaskStep struct {
 	OutputMapping     map[string]string `json:"output_mapping,omitempty"`
 	ImageArtifactName string            `json:"image,omitempty"`
 	Timeout           string            `json:"timeout,omitempty"`
+	HaltTimeout       string            `json:"halt_timeout,omitempty"`
 }
 
 func (step *TaskStep) Visit(v StepVisitor) error {
@@ -357,13 +365,14 @@ func (step *TaskStep) Visit(v StepVisitor) error {
 }
 
 type RunStep struct {
-	Message    string           `json:"run"`
-	Type       string           `json:"type"`
-	Params     Params           `json:"params,omitempty"`
-	Privileged bool             `json:"privileged,omitempty"`
-	Tags       Tags             `json:"tags,omitempty"`
-	Limits     *ContainerLimits `json:"container_limits,omitempty"`
-	Timeout    string           `json:"timeout,omitempty"`
+	Message     string           `json:"run"`
+	Type        string           `json:"type"`
+	Params      Params           `json:"params,omitempty"`
+	Privileged  bool             `json:"privileged,omitempty"`
+	Tags        Tags             `json:"tags,omitempty"`
+	Limits      *ContainerLimits `json:"container_limits,omitempty"`
+	Timeout     string           `json:"timeout,omitempty"`
+	HaltTimeout string           `json:"halt_timeout,omitempty"`
 
 	// XXX(prototypes): inputs, outputs, input_mapping, output_mapping?
 	// see https://github.com/concourse/rfcs/pull/103
@@ -537,6 +546,26 @@ func (step *TimeoutStep) Unwrap() StepConfig {
 
 func (step *TimeoutStep) Visit(v StepVisitor) error {
 	return v.VisitTimeout(step)
+}
+
+type HaltTimeoutStep struct {
+	Step StepConfig `json:"-"`
+
+	// it's very tempting to make this a Duration type, but that would probably
+	// prevent using `((vars))` to parameterize it
+	Duration string `json:"halt_timeout"`
+}
+
+func (step *HaltTimeoutStep) Wrap(sub StepConfig) {
+	step.Step = sub
+}
+
+func (step *HaltTimeoutStep) Unwrap() StepConfig {
+	return step.Step
+}
+
+func (step *HaltTimeoutStep) Visit(v StepVisitor) error {
+	return v.VisitHaltTimeout(step)
 }
 
 type OnSuccessStep struct {

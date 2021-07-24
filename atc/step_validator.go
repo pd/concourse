@@ -343,6 +343,23 @@ func (validator *StepValidator) VisitTimeout(step *TimeoutStep) error {
 	return nil
 }
 
+func (validator *StepValidator) VisitHaltTimeout(step *HaltTimeoutStep) error {
+	err := step.Step.Visit(validator)
+	if err != nil {
+		return err
+	}
+
+	validator.pushContext(".halt_timeout")
+	defer validator.popContext()
+
+	_, err = time.ParseDuration(step.Duration)
+	if err != nil {
+		validator.recordError("invalid duration '%s'", step.Duration)
+	}
+
+	return nil
+}
+
 func (validator *StepValidator) VisitRetry(step *RetryStep) error {
 	err := step.Step.Visit(validator)
 	if err != nil {

@@ -120,6 +120,11 @@ func (recursor StepRecursor) VisitTimeout(step *TimeoutStep) error {
 	return step.Step.Visit(recursor)
 }
 
+// VisitHaltTimeout recurses through to the wrapped step.
+func (recursor StepRecursor) VisitHaltTimeout(step *HaltTimeoutStep) error {
+	return step.Step.Visit(recursor)
+}
+
 // VisitRetry recurses through to the wrapped step.
 func (recursor StepRecursor) VisitRetry(step *RetryStep) error {
 	return step.Step.Visit(recursor)

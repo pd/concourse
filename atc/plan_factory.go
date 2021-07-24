@@ -59,6 +59,8 @@ func (factory PlanFactory) NewPlan(step PlanConfig) Plan {
 		plan.Try = &t
 	case TimeoutPlan:
 		plan.Timeout = &t
+	case HaltTimeoutPlan:
+		plan.HaltTimeout = &t
 	case RetryPlan:
 		plan.Retry = &t
 	case ArtifactInputPlan:

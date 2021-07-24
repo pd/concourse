@@ -312,6 +312,20 @@ func (visitor *planVisitor) VisitTimeout(step *atc.TimeoutStep) error {
 	return nil
 }
 
+func (visitor *planVisitor) VisitHaltTimeout(step *atc.HaltTimeoutStep) error {
+	err := step.Step.Visit(visitor)
+	if err != nil {
+		return err
+	}
+
+	visitor.plan = visitor.planFactory.NewPlan(atc.HaltTimeoutPlan{
+		Duration: step.Duration,
+		Step:     visitor.plan,
+	})
+
+	return nil
+}
+
 func (visitor *planVisitor) VisitRetry(step *atc.RetryStep) error {
 	retryStep := make(atc.RetryPlan, step.Attempts)
 

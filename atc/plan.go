@@ -22,9 +22,10 @@ type Plan struct {
 	OnError   *OnErrorPlan   `json:"on_error,omitempty"`
 	Ensure    *EnsurePlan    `json:"ensure,omitempty"`
 
-	Try     *TryPlan     `json:"try,omitempty"`
-	Timeout *TimeoutPlan `json:"timeout,omitempty"`
-	Retry   *RetryPlan   `json:"retry,omitempty"`
+	Try         *TryPlan         `json:"try,omitempty"`
+	Timeout     *TimeoutPlan     `json:"timeout,omitempty"`
+	HaltTimeout *HaltTimeoutPlan `json:"halt_timeout,omitempty"`
+	Retry       *RetryPlan       `json:"retry,omitempty"`
 
 	// used for 'fly execute'
 	ArtifactInput  *ArtifactInputPlan  `json:"artifact_input,omitempty"`
@@ -84,6 +85,10 @@ func (plan *Plan) Each(f func(*Plan)) {
 		plan.Timeout.Step.Each(f)
 	}
 
+	if plan.HaltTimeout != nil {
+		plan.HaltTimeout.Step.Each(f)
+	}
+
 	if plan.Retry != nil {
 		for i, p := range *plan.Retry {
 			p.Each(f)
@@ -133,6 +138,11 @@ type OnSuccessPlan struct {
 }
 
 type TimeoutPlan struct {
+	Step     Plan   `json:"step"`
+	Duration string `json:"duration"`
+}
+
+type HaltTimeoutPlan struct {
 	Step     Plan   `json:"step"`
 	Duration string `json:"duration"`
 }
@@ -194,6 +204,9 @@ type GetPlan struct {
 	// A timeout to enforce on the resource `get` process. Note that fetching the
 	// resource's image does not count towards the timeout.
 	Timeout string `json:"timeout,omitempty"`
+
+	// A timeout to enforce when waiting for a halted process to shutdown.
+	HaltTimeout string `json:"halt_timeout,omitempty"`
 }
 
 type PutPlan struct {
@@ -220,6 +233,9 @@ type PutPlan struct {
 	// A timeout to enforce on the resource `put` process. Note that fetching the
 	// resource's image does not count towards the timeout.
 	Timeout string `json:"timeout,omitempty"`
+
+	// A timeout to enforce when waiting for a halted process to shutdown.
+	HaltTimeout string `json:"halt_timeout,omitempty"`
 
 	// If or not expose BUILD_CREATED_BY to build metadata
 	ExposeBuildCreatedBy bool `json:"expose_build_created_by,omitempty"`
@@ -251,6 +267,9 @@ type CheckPlan struct {
 	// A timeout to enforce on the resource `check` process. Note that fetching
 	// the resource's image does not count towards the timeout.
 	Timeout string `json:"timeout,omitempty"`
+
+	// A timeout to enforce when waiting for a halted process to shutdown.
+	HaltTimeout string `json:"halt_timeout,omitempty"`
 
 	// Worker tags to influence placement of the container.
 	Tags Tags `json:"tags,omitempty"`
@@ -299,6 +318,9 @@ type TaskPlan struct {
 	// image does not count towards the timeout.
 	Timeout string `json:"timeout,omitempty"`
 
+	// A timeout to enforce when waiting for a halted process to shutdown.
+	HaltTimeout string `json:"halt_timeout,omitempty"`
+
 	// Resource types to have available for use when fetching the task's image.
 	//
 	// XXX(check-refactor): Eliminating this would be great - if we can replace
@@ -334,6 +356,9 @@ type RunPlan struct {
 	// A timeout to enforce on the run step's process. Note that fetching the
 	// prototype's image does not count towards the timeout.
 	Timeout string `json:"timeout,omitempty"`
+
+	// A timeout to enforce when waiting for a halted process to shutdown.
+	HaltTimeout string `json:"halt_timeout,omitempty"`
 }
 
 type SetPipelinePlan struct {
